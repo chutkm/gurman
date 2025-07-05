@@ -1,0 +1,73 @@
+
+[clients]
+* client_id {label:"INT, PK"}
+tg_user_name {label:"VARCHAR(50)"}
+phone_number {label:"VARCHAR(15)"}
+registration_date {label:"DATE"}
+
+[reviews]
+* review_id {label:"INT, PK"}
+rating {label:"INT"}
+review_text {label:"TEXT"}
+review_date_time {label:"DATETIME"}
+client_id {label:"INT, FK"}
+
+[reservations]
+* reservation_id {label:"INT, PK"}
+reservation_date_time {label:"DATETIME"}
+reservation_name {label:"VARCHAR(100)"}
+guest_count {label:"INT"}
+reservation_status {label:"ENUM"}
+reservation_hours {label:"INT"}
+client_id {label:"INT, FK"}
+table_id {label:"INT, FK"}
+
+[preorder]
+* preorder_id {label:"INT, PK"}
+quantity {label:"INT"}
+reservation_id {label:"INT, FK"}
+menu_id {label:"INT, FK"}
+
+[menu]
+* menu_id {label:"INT, PK"}
+name_dish {label:"VARCHAR(255)"}
+type_dish {label:"VARCHAR(100)"}
+portion_size {label:"DECIMAL(10,2)"}
+unit_of_measurement {label:"VARCHAR(50)"}
+price {label:"INT"}
+
+[restaurants]
+* restaurant_id {label:"INT, PK"}
+restaurant_name {label:"VARCHAR(100)"}
+address {label:"VARCHAR(150)"}
+phone_number {label:"VARCHAR(15)"}
+
+[tables]
+* table_id {label:"INT, PK"}
+table_number {label:"INT"}
+seats {label:"INT"}
+place_type {label:"ENUM"}
+restaurant_id {label:"INT, FK"}
+
+[promotions]
+* promotion_id {label:"INT, PK"}
+promotion_name {label:"VARCHAR(100)"}
+description {label:"TEXT"}
+discount_percentage {label:"DECIMAL(5,2)"}
+start_date {label:"DATE"}
+end_date {label:"DATE"}
+usage_conditions {label:"TEXT"}
+
+[administrators]
+* admin_id {label:"INT, PK"}
+admin_name {label:"VARCHAR(50)"}
+email {label:"VARCHAR(100)"}
+password_hash {label:"VARCHAR(255)"}
+
+# Связи
+clients client_id *--1 reviews client_id
+clients client_id *--1 reservations client_id
+reservations reservation_id *--1 preorder reservation_id
+reservations table_id *--1 tables table_id
+tables restaurant_id *--1 restaurants restaurant_id
+preorder menu_id *--1 menu menu_id

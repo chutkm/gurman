@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Административная панель</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="auth-page">
+
+<!-- Форма выбора ресторана -->
+<form action="{{ url_for('admin_panel') }}" method="GET">
+    <label for="restaurant">Выберите ресторан:</label>
+    <select name="restaurant_id" id="restaurant-selector" onchange="this.form.submit()">
+        <!-- Пустое значение по умолчанию -->
+        <option value="" {% if not selected_restaurant_id %}selected{% endif %}>----</option>
+        {% for restaurant in restaurants %}
+            <option value="{{ restaurant.restaurant_id }}" {% if restaurant.restaurant_id == selected_restaurant_id %}selected{% endif %}>
+                {{ restaurant.address }}
+            </option>
+        {% endfor %}
+    </select>
+</form>
+
+<h1>Административная панель</h1>
+
+<!-- Форма для выбора периода -->
+<form action="{{ url_for('generate_report') }}" method="POST">
+    <label for="period">Выберите период:</label>
+    <select name="period" id="period">
+        <option value="today">Сегодня</option>
+        <option value="week">Неделя</option>
+        <option value="month">Месяц</option>
+    </select>
+    <input type="hidden" name="restaurant_id" id="hidden-restaurant-id" value="{{ selected_restaurant_id }}">
+    <button type="submit">Создать отчет</button>
+</form>
+
+<!-- Ошибки -->
+<div id="error-message" style="display: none; color: red; padding: 10px; border: 1px solid red; margin-top: 20px;"></div>
+
+<!-- Таблица с бронированиями -->
+<table>
+    <colgroup>
+        <col style="width: 100px;">
+        <col style="width: 200px;">
+        <col style="width: 300px;">
+        <col style="width: 100px;">
+        <col style="width: 100px;">
+        <col style="width: 100px;">
+        <col style="width: auto;">
+        <col style="width: auto;">
+        <col style="width: 300px;">
+    </colgroup>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Дата и время</th>
+            <th>Имя клиента</th>
+            <th>Кол-во гостей</th>
+            <th>Часы бронирования</th>
+            <th>Столик</th>
+            <th>Предзаказ</th>
+            <th>Статус</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for reservation in reservations %}
+            <tr>
+                <td>{{ reservation.reservation_id }}</td>
+                <td>
+                    <span class="reservation_date_time">{{ reservation.reservation_date_time.strftime('%d-%m-%Y %H:%M') }}</span>
+                    <input type="datetime-local" class="edit_date_time" style="display:none;" value="{{ reservation.reservation_date_time.strftime('%Y-%m-%d %H:%M') }}">
+                </td>
+                <td>
+                    <span class="reservation_name">{{ reservation.reservation_name }}</span>
+                    <input type="text" class="edit_reservation_name" style="display:none;" value="{{ reservation.reservation_name }}">
+                </td>
+                <td>
+                    <span class="guest_count">{{ reservation.guest_count }}</span>
+                    <input type="number" class="edit_guest_count" style="display:none;" value="{{ reservation.guest_count }}">
+                </td>
+                <td>
+                    <span class="reservation_hours">{{ reservation.reservation_hours }}</span>
+                    <input type="number" class="edit_reservation_hours" style="display:none;" value="{{ reservation.reservation_hours }}">
+                </td>
+                <td>
+                    <span class="table_number">{{ reservation.table_number }}</span>
+                    <input type="text" class="edit_table_number" style="display:none;" value="{{ reservation.table_number }}">
+                </td>
+
+                <td>{{ reservation.preorder_details }}</td>
+
+                <td>{{ reservation.reservation_status }}</td>
+
+                <!-- Скрытое поле для передачи restaurant_id -->
+                <input type="hidden" class="restaurant_id" value="{{  selected_restaurant_id }}">
+
+                <td>
+                    <button class="edit-btn">Изменить</button>
+                    <button class="save-btn" style="display:none;">Сохранить</button>
+                    <button class="cancel-btn" style="display:none;">Отмена</button>
+                    <form action="{{ url_for('delete_reservation', reservation_id=reservation.reservation_id) }}" method="POST" style="display:inline;">
+                        <button type="submit">Удалить</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Слушатель на изменение выбора ресторана
+        const restaurantSelector = document.getElementById('restaurant-selector');
+        const hiddenRestaurantId = document.getElementById('hidden-restaurant-id');
+
+        // Обновление значения для всех бронирований, когда меняется ресторан
+        restaurantSelector.addEventListener('change', function() {
+            hiddenRestaurantId.value = this.value;
+            document.querySelectorAll('.restaurant_id').forEach(input => {
+                input.value = this.value;  // Обновляем скрытые поля в каждой строке таблицы
+            });
+        });
+
+        document.querySelectorAll('.edit-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                row.querySelectorAll('span').forEach(span => span.style.display = 'none');
+                row.querySelectorAll('input').forEach(input => input.style.display = 'inline-block');
+                this.style.display = 'none';
+                row.querySelector('.save-btn').style.display = 'inline-block';
+                row.querySelector('.cancel-btn').style.display = 'inline-block';
+            });
+        });
+
+        document.querySelectorAll('.save-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const reservationId = row.querySelector('td').textContent.trim();
+                const updatedData = {
+                    reservation_id: reservationId,
+                    reservation_date_time: row.querySelector('.edit_date_time').value,
+                    reservation_name: row.querySelector('.edit_reservation_name').value,
+                    guest_count: row.querySelector('.edit_guest_count').value,
+                    reservation_hours: row.querySelector('.edit_reservation_hours').value,
+                    table_number: row.querySelector('.edit_table_number').value,
+                    restaurant_id: row.querySelector('.restaurant_id').value  // Скрытое поле передаем
+                };
+
+                fetch('{{ url_for("update_reservation") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        row.querySelector('.reservation_date_time').textContent = updatedData.reservation_date_time;
+                        row.querySelector('.reservation_name').textContent = updatedData.reservation_name;
+                        row.querySelector('.guest_count').textContent = updatedData.guest_count;
+                        row.querySelector('.reservation_hours').textContent = updatedData.reservation_hours;
+                        row.querySelector('.table_number').textContent = updatedData.table_number;
+                        row.querySelector('.cancel-btn').click();
+                    } else {
+                        showError(data.error || 'Ошибка при сохранении.');
+                    }
+                })
+                .catch(() => showError('Ошибка сети.'));
+            });
+        });
+
+        document.querySelectorAll('.cancel-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                row.querySelectorAll('input').forEach(input => input.style.display = 'none');
+                row.querySelectorAll('span').forEach(span => span.style.display = 'inline-block');
+                row.querySelector('.edit-btn').style.display = 'inline-block';
+                this.style.display = 'none';
+                row.querySelector('.save-btn').style.display = 'none';
+            });
+        });
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+    });
+</script>
+
+
+</body>
+</html>
