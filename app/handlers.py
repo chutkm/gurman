@@ -20,6 +20,8 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from aiogram.types import BufferedInputFile
 
+from app.utils.llm_interface import ask_llm_ollama
+
 # Настройка логирования
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -1151,3 +1153,52 @@ async def confirm_application(callback: CallbackQuery, state: FSMContext):
 async def cancel_application(message: Message, state: FSMContext):
     await message.answer("Оформление заявки отменено.")
     await state.clear()
+
+from aiogram import Router, F
+from aiogram.fsm.context import FSMContext
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.filters import Command
+from aiogram.fsm.state import StatesGroup, State
+
+router = Router()
+
+class AIState(StatesGroup):
+    active = State()
+
+
+
+# Команда /aihelp
+@router.message(Command("aihelp"))
+async def ai_help(message: Message, state: FSMContext):
+    await message.answer(
+        "Вы вошли в режим AI-гидa.\nВыберите действие:",
+        reply_markup=kb.ai_reply_keyboard()
+    )
+
+# Обработка reply-кнопок
+@router.message(F.text == "🔮 Включить AI-режим")
+async def ai_on(message: Message, state: FSMContext):
+    await state.set_state(AIState.active)
+    await state.update_data(ai_mode=True)
+    await message.answer("AI-режим включен! Задавайте свой вопрос, например: «Посоветуй итальянский ресторан для компании».")
+
+@router.message(F.text == "🚫 Выключить AI-режим")
+async def ai_off(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer("AI-режим выключен. Возвращаюсь в главное меню:", reply_markup=kb.main)
+
+@router.message(F.text == "↩️ Выйти в главное меню")
+async def exit_to_main_menu(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer("Главное меню:", reply_markup=kb.main)
+
+@router.message()
+async def handle_any_message(message: Message, state: FSMContext):
+    data = await state.get_data()
+    if data.get("ai_mode"):
+        await message.answer("Думаю... 🤖")
+        response = ask_llm_ollama(message.text)
+        await message.answer(response)
+    else:
+        await message.answer("Выберите команду из меню или введите /aihelp для активации AI-гида.")
+
