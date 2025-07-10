@@ -84,7 +84,7 @@ class EventApplicationStates(StatesGroup):
     message_to_manager = State()       # Дополнительное сообщение менеджеру
     confirm_application = State()      # Подтверждение отправки заявки
 
-@router.message(CommandStart())
+@router.message(Command("start"))
 async def cmd_start(message: Message, state: FSMContext):
     """
     Обрабатывает команду /start. Заполняет данные пользователя и запрашивает телефон при необходимости.
@@ -462,7 +462,7 @@ CATEGORIES = {
     },
     "category_2": {
         "name": "Рестораны в центре Москвы",
-        "url": "https://www.restoclub.ru/msk/search/restorany-bary-i-banketnye-zaly-v-centre-moskvy"
+        "url": "https://www.restoclub.ru/msk/ratings/reiting-380-restoranov"
     },
     "category_3": {
         "name": "Рестораны и кафе с верандой",
@@ -1145,7 +1145,7 @@ async def confirm_application(callback: CallbackQuery, state: FSMContext):
         session.add(application)
         await session.commit()
 
-    await callback.message.edit_text("✅ Ваша заявка принята! Менеджер свяжется с вами в ближайшее время.")
+    await callback.message.answer("✅ Ваша заявка принята! Менеджер свяжется с вами в ближайшее время.",reply_markup=kb.main)
     await state.clear()
 
 
@@ -1160,14 +1160,10 @@ from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.filters import Command
 from aiogram.fsm.state import StatesGroup, State
 
-router = Router()
 
 class AIState(StatesGroup):
     active = State()
 
-
-
-# Команда /aihelp
 @router.message(Command("aihelp"))
 async def ai_help(message: Message, state: FSMContext):
     await message.answer(

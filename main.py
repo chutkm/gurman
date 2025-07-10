@@ -387,7 +387,7 @@ async def set_bot_commands(bot: Bot):
         # BotCommand(command="help", description="Справка"),
     ]
     await bot.set_my_commands(commands)
-    # print("✅ Команды установлены!")
+    print("✅ Команды установлены!")
 
 
 # Загружаем переменные из .env
