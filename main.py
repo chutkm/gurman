@@ -1,5 +1,5 @@
 import datetime
-from aiogram import Bot, Dispatcher
+
 from aiogram.dispatcher import router
 from quart import request, session, send_file, jsonify
 import asyncio
@@ -376,6 +376,20 @@ async def generate_report():
     # Отправка PDF-файла внутри правильного контекста запроса
     return await send_file(pdf_path, as_attachment=True)
 
+
+from aiogram import Bot
+from aiogram.types import BotCommand
+
+async def set_bot_commands(bot: Bot):
+    commands = [
+        BotCommand(command="start", description="Запуск бота"),
+        BotCommand(command="aihelp", description="Режим AI-гидa"),
+        # BotCommand(command="help", description="Справка"),
+    ]
+    await bot.set_my_commands(commands)
+    print("✅ Команды установлены!")
+
+
 # Загружаем переменные из .env
 load_dotenv()
 
@@ -385,9 +399,11 @@ BOT_TOKEN = os.getenv('BOT_TOKEN')
 # Функция для запуска бота
 async def start_bot():
     bot = Bot(token=BOT_TOKEN)
+
     await async_main()  # Инициализация базы данных
     dp = Dispatcher()
     dp.include_router(router)
+    await set_bot_commands(bot)
     await dp.start_polling(bot)
 # Секретный ключ для сессий
 

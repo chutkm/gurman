@@ -105,6 +105,21 @@ main = ReplyKeyboardMarkup(
     resize_keyboard=True,
     input_field_placeholder='Выберите пункт который вас интересует'
 )
+#--------------LLMs
+# def ai_mode_buttons():
+#     return InlineKeyboardMarkup(inline_keyboard=[
+#         [InlineKeyboardButton(text="🔮 Включить AI-режим", callback_data="ai_on")],
+#         [InlineKeyboardButton(text="🚫 Выключить AI-режим", callback_data="ai_off")]
+#     ])
+def ai_reply_keyboard():
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="🔮 Включить AI-режим")],
+            [KeyboardButton(text="🚫 Выключить AI-режим")],
+            [KeyboardButton(text="↩️ Выйти в главное меню")]
+        ],
+        resize_keyboard=True
+    )
 
 
 def salas_new_kb() -> InlineKeyboardMarkup:
